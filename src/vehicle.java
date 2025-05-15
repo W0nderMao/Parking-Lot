@@ -1,3 +1,4 @@
+import java.sql.Time;
 import java.util.Scanner;
 
 public abstract class vehicle
@@ -14,9 +15,7 @@ public abstract class vehicle
     }
 
     public void SetParkingtime(double time){
-        System.out.print("Please enter the parking time: ");
-        this.Parkingtime = scanner.nextInt();
-        scanner.close();
+        this.Parkingtime = time;
     }
 
     public void SetLicensePlate(){

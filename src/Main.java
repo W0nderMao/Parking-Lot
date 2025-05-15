@@ -7,7 +7,7 @@ public class Main {
     private static final String LOG_FILE = "parking_logs.txt";
 
     // 存储车辆信息的数组：索引0-车牌号，1-类型，2-停放时间，3-在场状态
-    private static String[][] parkingData = new String[MAX_CAPACITY][4];
+    private static String[][] parkingData = new String[MAX_CAPACITY][5];
     private static int carSpots = 50;
     private static int motoSpots = 30;
     private static int currentIndex = 0;
@@ -54,13 +54,7 @@ public class Main {
         }
 
         // 创建对应车辆对象
-        vehicle vehicle = switch (type) {
-            case "car" -> new car();
-            case "moto" -> new moto();
-            case "e_car" -> new e_car();
-            case "vip" -> new vip();
-            default -> throw new IllegalArgumentException();
-        };
+        vehicle vehicle = createVehicle(type);
 
         vehicle.SetLicensePlate();
 
@@ -68,6 +62,7 @@ public class Main {
         parkingData[currentIndex][0] = vehicle.LicensePlate;
         parkingData[currentIndex][1] = type;
         parkingData[currentIndex][3] = "true";
+        parkingData[currentIndex][4] = "0.0";
         currentIndex++;
 
         // 更新车位计数
@@ -104,15 +99,33 @@ public class Main {
             return;
         }
 
-        System.out.print("Please enter the duration of stay（minute）：");
-        String time = scanner.nextLine().trim();
-        parkingData[index][2] = time;
+        //载入停留时间
+        System.out.print("Please enter the duration of stay (minutes): ");
+        String timeStr = scanner.nextLine().trim();
+        int time;
+        try {
+            time = Integer.parseInt(timeStr);
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid time format! Please enter a number.");
+            return;
+        }
+        parkingData[index][2] = timeStr;
+
+        // 计算费用
+        String type = parkingData[index][1];
+        vehicle vehicle = createVehicle(type);
+        vehicle.SetParkingtime(time); // 设置停放时间
+        double fee = vehicle.calculateFee(); // 调用计费方法
+        parkingData[index][4] = String.valueOf(fee); // 存储费用
 
         System.out.print("If you have already paid, please enter 'paid':");
         if (!scanner.nextLine().trim().equalsIgnoreCase("paid")) {
             System.out.println("Unconfirmed payment！");
             return;
         }
+
+        double totalfee = Double.parseDouble(parkingData[index][4]);
+        System.out.printf("Payment confirmed. Total fee: %.2f\n", totalfee);
 
         // 更新状态
         parkingData[index][3] = "false";
@@ -131,6 +144,21 @@ public class Main {
             Currently, out of 50 car parking spaces, %d are occupied, leaving %d available.
             Currently, out of 30 motorcycle parking spaces, %d are occupied, leaving %d available.
             """, 50 - carSpots, carSpots, 30 - motoSpots, motoSpots);
+    }
+
+    private static vehicle createVehicle(String type) {
+        switch (type) {
+            case "car":
+                return new car();
+            case "moto":
+                return new moto();
+            case "e_car":
+                return new e_car();
+            case "vip":
+                return new vip();
+            default:
+                throw new IllegalArgumentException("Invalid vehicle type");
+        }
     }
 
     private static void writeToFile(String plate, String type, String action) {
