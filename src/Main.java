@@ -122,6 +122,20 @@ public class Main {
         vehicle vehicle = createVehicle(type);
         vehicle.SetParkingtime(time); // 设置停放时间
         double fee = vehicle.calculateFee(); // 调用计费方法
+
+        // ===== 超24小时额外收费 =====
+        if (!type.equals("vip")) {
+            int totalMinutes = time; // 用户输入的停放时间（已解析为int）
+            if (totalMinutes > 1440) { // 超过24小时
+                int extraMinutes = totalMinutes - 1440;
+                int extraHours = extraMinutes / 60;
+                if (extraMinutes % 60 > 0) { // 不足1小时按1小时算
+                    extraHours += 1;
+                }
+                fee += extraHours * 5; // 累加额外费用
+            }
+        }
+
         parkingData[index][4] = String.valueOf(fee); // 存储费用
 
         System.out.print("If you have already paid, please enter 'paid':");
