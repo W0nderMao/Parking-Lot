@@ -6,7 +6,6 @@ public class Main {
     private static final String PASSWORD = "hud.uk";
     private static final String LOG_FILE = "parking_logs.txt";
 
-    // 存储车辆信息的数组：索引0-车牌号，1-类型，2-停放时间，3-在场状态
     private static String[][] parkingData = new String[MAX_CAPACITY][5];
     private static int carSpots = 50;
     private static int motoSpots = 30;
@@ -59,26 +58,22 @@ public class Main {
             return;
         }
 
-        // 创建对应车辆对象
         vehicle vehicle = createVehicle(type);
 
         vehicle.SetLicensePlate();
 
-        // 存入数组
         parkingData[currentIndex][0] = vehicle.LicensePlate;
         parkingData[currentIndex][1] = type;
         parkingData[currentIndex][3] = "true";
         parkingData[currentIndex][4] = "0.0";
         currentIndex++;
 
-        // 更新车位计数
         if (type.equals("moto")) {
             motoSpots--;
         } else {
             carSpots--;
         }
 
-        // 写入文件
         writeToFile(vehicle.LicensePlate, type, "in");
 
         System.out.println("Parking procedures have been completed.");
@@ -105,7 +100,7 @@ public class Main {
             return;
         }
 
-        //载入停留时间
+
         System.out.print("Please enter the duration of stay (minutes): ");
         String timeStr = scanner.nextLine().trim();
         int time;
@@ -120,23 +115,23 @@ public class Main {
         // 计算费用
         String type = parkingData[index][1];
         vehicle vehicle = createVehicle(type);
-        vehicle.SetParkingtime(time); // 设置停放时间
-        double fee = vehicle.calculateFee(); // 调用计费方法
+        vehicle.SetParkingtime(time);
+        double fee = vehicle.calculateFee();
 
-        // ===== 超24小时额外收费 =====
+
         if (!type.equals("vip")) {
-            int totalMinutes = time; // 用户输入的停放时间（已解析为int）
-            if (totalMinutes > 1440) { // 超过24小时
+            int totalMinutes = time;
+            if (totalMinutes > 1440) {
                 int extraMinutes = totalMinutes - 1440;
                 int extraHours = extraMinutes / 60;
-                if (extraMinutes % 60 > 0) { // 不足1小时按1小时算
+                if (extraMinutes % 60 > 0) {
                     extraHours += 1;
                 }
-                fee += extraHours * 5; // 累加额外费用
+                fee += extraHours * 5;
             }
         }
 
-        parkingData[index][4] = String.valueOf(fee); // 存储费用
+        parkingData[index][4] = String.valueOf(fee);
 
         System.out.print("If you have already paid, please enter 'paid':");
         if (!scanner.nextLine().trim().equalsIgnoreCase("paid")) {
@@ -147,17 +142,14 @@ public class Main {
         double totalfee = Double.parseDouble(parkingData[index][4]);
         System.out.printf("Payment confirmed. Total fee: %.2f\n", totalfee);
 
-        // 更新状态
         parkingData[index][3] = "false";
 
-        // 更新车位计数
         if (parkingData[index][1].equals("moto")) {
             motoSpots++;
         } else {
             carSpots++;
         }
 
-        // 写入文件
         writeToFile(parkingData[index][0], parkingData[index][1], "out");
 
         System.out.printf("""
@@ -167,33 +159,28 @@ public class Main {
     }
 
     private static void handleEndLogic() {
-        // 1. 计算总收益
         double totalRevenue = 0.0;
         List<String[]> sortedVehicles = new ArrayList<>();
 
-        // 过滤有效数据并收集可排序的车辆
         for (int i = 0; i < currentIndex; i++) {
             String[] vehicle = parkingData[i];
-            if (vehicle[3].equals("false")) { // 仅统计已离场车辆
+            if (vehicle[3].equals("false")) {
                 totalRevenue += Double.parseDouble(vehicle[4]);
             }
             sortedVehicles.add(vehicle);
         }
 
-        // 2. 按停放时间（降序）和车牌（升序）排序
         sortedVehicles.sort((v1, v2) -> {
             int time1 = Integer.parseInt(v1[2]);
             int time2 = Integer.parseInt(v2[2]);
             if (time2 != time1) {
-                return Integer.compare(time2, time1); // 时间降序
+                return Integer.compare(time2, time1);
             }
-            return v1[0].compareTo(v2[0]); // 车牌升序
+            return v1[0].compareTo(v2[0]);
         });
 
-        // 输出总收益
         System.out.printf("Today's total revenue is：%.2f\n", totalRevenue);
 
-        // 输出排序后的车辆信息
         System.out.println("==== Vehicle Parking Record ====");
         for (String[] vehicle : sortedVehicles) {
             String type = vehicle[1];
@@ -205,7 +192,6 @@ public class Main {
                     type.toUpperCase(), plate, time, fee);
         }
 
-        // 3. 检查未离场车辆
         boolean hasOvernight = false;
         for (int i = 0; i < currentIndex; i++) {
             String[] vehicle = parkingData[i];
