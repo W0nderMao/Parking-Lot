@@ -1,4 +1,3 @@
-import java.sql.Time;
 import java.util.Scanner;
 
 public abstract class vehicle

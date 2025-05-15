@@ -29,16 +29,22 @@ public class Main {
             If today's work is finished, please enter ”end“.
             """);
 
+        label:
         while (true) {
             String command = scanner.nextLine().trim().toLowerCase();
 
-            if (command.equals("end")) break;
-
-            if (command.equals("start")) {
-                handleParking(scanner);
-            } else if (command.equals("out")) {
-                handleExit(scanner);
+            switch (command) {
+                case "end":
+                    handleEndLogic();
+                    break label;
+                case "start":
+                    handleParking(scanner);
+                    break;
+                case "out":
+                    handleExit(scanner);
+                    break;
             }
+
         }
 
         scanner.close();
@@ -146,19 +152,70 @@ public class Main {
             """, 50 - carSpots, carSpots, 30 - motoSpots, motoSpots);
     }
 
-    private static vehicle createVehicle(String type) {
-        switch (type) {
-            case "car":
-                return new car();
-            case "moto":
-                return new moto();
-            case "e_car":
-                return new e_car();
-            case "vip":
-                return new vip();
-            default:
-                throw new IllegalArgumentException("Invalid vehicle type");
+    private static void handleEndLogic() {
+        // 1. 计算总收益
+        double totalRevenue = 0.0;
+        List<String[]> sortedVehicles = new ArrayList<>();
+
+        // 过滤有效数据并收集可排序的车辆
+        for (int i = 0; i < currentIndex; i++) {
+            String[] vehicle = parkingData[i];
+            if (vehicle[3].equals("false")) { // 仅统计已离场车辆
+                totalRevenue += Double.parseDouble(vehicle[4]);
+            }
+            sortedVehicles.add(vehicle);
         }
+
+        // 2. 按停放时间（降序）和车牌（升序）排序
+        sortedVehicles.sort((v1, v2) -> {
+            int time1 = Integer.parseInt(v1[2]);
+            int time2 = Integer.parseInt(v2[2]);
+            if (time2 != time1) {
+                return Integer.compare(time2, time1); // 时间降序
+            }
+            return v1[0].compareTo(v2[0]); // 车牌升序
+        });
+
+        // 输出总收益
+        System.out.printf("Today's total revenue is：%.2f\n", totalRevenue);
+
+        // 输出排序后的车辆信息
+        System.out.println("==== Vehicle Parking Record ====");
+        for (String[] vehicle : sortedVehicles) {
+            String type = vehicle[1];
+            String plate = vehicle[0];
+            String time = vehicle[2];
+            String fee = vehicle[3].equals("false") ? String.format("%.2f", Double.parseDouble(vehicle[4])) : "Not exited";
+
+            System.out.printf("%s type vehicle %s parking time is %s minutes, earnings are %s yuan.\n",
+                    type.toUpperCase(), plate, time, fee);
+        }
+
+        // 3. 检查未离场车辆
+        boolean hasOvernight = false;
+        for (int i = 0; i < currentIndex; i++) {
+            String[] vehicle = parkingData[i];
+            if (vehicle[3].equals("true")) {
+                if (!hasOvernight) {
+                    System.out.println("==== Overnight vehicles ====");
+                    hasOvernight = true;
+                }
+                System.out.printf("%s type vehicle %s parking time is %s minutes (overnight vehicle)\n",
+                        vehicle[1].toUpperCase(), vehicle[0], vehicle[2]);
+            }
+        }
+
+        System.out.println("Thank you for using the 'Smart Park' system.");
+    }
+
+    private static vehicle createVehicle(String type) {
+        return switch (type) {
+            case "car" -> new car();
+            case "moto" -> new moto();
+            case "e_car" -> new e_car();
+            case "vip" -> new vip();
+            default -> throw new IllegalArgumentException("Invalid vehicle type");
+        };
     }
 
     private static void writeToFile(String plate, String type, String action) {
